@@ -1,0 +1,194 @@
+---
+const currentYear = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container-editorial footer-grid">
+    <div class="footer-brand-col">
+      <a href="/" class="footer-logo-link">
+        <img
+          src="/logo-quintana-roo-comunica.png"
+          alt="Quintana Roo Comunica"
+          class="footer-logo-img"
+          width="598"
+          height="610"
+          loading="lazy"
+        />
+        <span class="footer-wordmark">Quintana Roo <em>Comunica</em></span>
+      </a>
+      <p class="footer-mission">
+        Noticias, cultura, historia, turismo y medio ambiente de Quintana Roo y el Caribe mexicano, contadas desde su gente.
+      </p>
+      <div class="footer-cloudinary-badge">
+        <span>Imágenes optimizadas vía</span>
+        <strong>Cloudinary CDN</strong>
+      </div>
+    </div>
+
+    <div class="footer-links-col">
+      <h4 class="footer-col-title">Secciones</h4>
+      <ul class="footer-nav-list">
+        <li><a href="/">Portada</a></li>
+        <li><a href="/categoria/estatales">Estatales</a></li>
+        <li><a href="/categoria/turismo">Turismo</a></li>
+        <li><a href="/categoria/cultura">Cultura</a></li>
+        <li><a href="/categoria/medio-ambiente">Medio ambiente</a></li>
+        <li><a href="/categoria/historia">Historia</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-links-col">
+      <h4 class="footer-col-title">Contacto</h4>
+      <p class="footer-contact-note">
+        Boletines de prensa y contacto con la redacción:<br />
+        <strong>redaccion@quintanaroocomunica.com</strong>
+      </p>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div class="container-editorial footer-bottom-inner">
+      <p>© {currentYear} <strong>Quintana Roo Comunica</strong>. Todos los derechos reservados.</p>
+      <p class="footer-tech">Arquitectura Editorial de Ultra-Velocidad · Mobile-First</p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    background-color: var(--color-qroo-navy);
+    color: #cbd5e1;
+    margin-top: 4rem;
+    border-top: 4px solid var(--color-qroo-cyan);
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.25rem;
+    padding-top: 3rem;
+    padding-bottom: 2.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .footer-grid {
+      grid-template-columns: 1.5fr 1fr 1.2fr;
+    }
+  }
+
+  .footer-wordmark {
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: var(--color-qroo-navy);
+  }
+
+  .footer-wordmark em {
+    font-style: normal;
+    color: var(--color-qroo-cyan);
+  }
+
+  .footer-logo-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    text-decoration: none;
+    background-color: #ffffff;
+    padding: 0.5rem 0.9rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+  }
+
+  .footer-logo-img {
+    height: 44px;
+    width: auto;
+  }
+
+  .footer-mission {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #94a3b8;
+    max-width: 38ch;
+    margin: 0 0 1rem 0;
+  }
+
+  .footer-cloudinary-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    background: rgba(43, 120, 246, 0.15);
+    border: 1px solid rgba(43, 120, 246, 0.35);
+    color: #e2e8f0;
+    padding: 0.25rem 0.65rem;
+    border-radius: 4px;
+  }
+
+  .footer-cloudinary-badge strong {
+    color: var(--color-qroo-cyan);
+  }
+
+  .footer-col-title {
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #ffffff;
+    margin: 0 0 1rem 0;
+    border-left: 3px solid var(--color-qroo-cyan);
+    padding-left: 0.6rem;
+  }
+
+  .footer-nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    font-size: 0.9rem;
+  }
+
+  .footer-nav-list a:hover {
+    color: var(--color-qroo-cyan);
+  }
+
+  .footer-contact-note {
+    margin-top: 1.25rem;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    line-height: 1.5;
+  }
+
+  .footer-contact-note strong {
+    color: #ffffff;
+  }
+
+  .footer-bottom {
+    background-color: var(--color-qroo-navy-dark);
+    padding: 1.15rem 0;
+    font-size: 0.78rem;
+    color: #64748b;
+  }
+
+  .footer-bottom-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    justify-content: space-between;
+  }
+
+  @media (min-width: 640px) {
+    .footer-bottom-inner {
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+
+  .footer-bottom p {
+    margin: 0;
+  }
+
+  .footer-bottom strong {
+    color: #cbd5e1;
+  }
+</style>

@@ -1,0 +1,123 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  type?: 'website' | 'article';
+  publishedTime?: string;
+  author?: string;
+  currentCategory?: string;
+}
+
+const {
+  title = 'Quintana Roo Comunica | Noticias de Quintana Roo, Análisis y Actualidad',
+  description = 'Noticias, turismo, cultura, historia y medio ambiente de Quintana Roo y el Caribe mexicano.',
+  image = '/logo-quintana-roo-comunica.png',
+  type = 'website',
+  publishedTime,
+  author = 'Redacción Quintana Roo Comunica',
+  currentCategory = 'Portada',
+} = Astro.props;
+
+const fullTitle = title.includes('Quintana Roo Comunica') ? title : `${title} | Quintana Roo Comunica`;
+
+const siteUrl = 'https://quintanaroocomunica.com';
+const canonicalURL = new URL(Astro.url.pathname, siteUrl);
+
+const jsonLd = type === 'article'
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'NewsArticle',
+      mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': canonicalURL.toString(),
+      },
+      headline: fullTitle,
+      description: description,
+      image: [image.startsWith('http') ? image : new URL(image, siteUrl).toString()],
+      datePublished: publishedTime ? new Date(publishedTime).toISOString() : new Date().toISOString(),
+      dateModified: publishedTime ? new Date(publishedTime).toISOString() : new Date().toISOString(),
+      author: [
+        {
+          '@type': 'Person',
+          name: author,
+        },
+      ],
+      publisher: {
+        '@type': 'NewsMediaOrganization',
+        name: 'Quintana Roo Comunica',
+        url: siteUrl,
+        logo: {
+          '@type': 'ImageObject',
+          url: `${siteUrl}/logo-quintana-roo-comunica.png`,
+        },
+      },
+    }
+  : {
+      '@context': 'https://schema.org',
+      '@type': 'NewsMediaOrganization',
+      name: 'Quintana Roo Comunica',
+      url: siteUrl,
+      logo: `${siteUrl}/logo-quintana-roo-comunica.png`,
+      description: description,
+    };
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Primary Meta Tags -->
+    <title>{fullTitle}</title>
+    <meta name="title" content={fullTitle} />
+    <meta name="description" content={description} />
+    <meta name="author" content={author} />
+
+    <!-- Open Graph / WhatsApp / Facebook -->
+    <meta property="og:type" content={type} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={image} />
+    <meta property="og:site_name" content="Quintana Roo Comunica" />
+    <meta property="og:locale" content="es_MX" />
+    {publishedTime && <meta property="article:published_time" content={publishedTime} />}
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+
+    <!-- Google Fonts: Newsreader (Editorial Serif) & Plus Jakarta Sans (Clean Geometric Sans) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..800;1,6..72,400..700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  
+    <!-- Search Engine & Google News Directives -->
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <link rel="canonical" href={canonicalURL} />
+    
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+  </head>
+  <body>
+    <Header currentCategory={currentCategory} />
+    <main>
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://quintanaroocomunica.com/sitemap.xml
+Sitemap: https://quintanaroocomunica.com/sitemap-index.xml

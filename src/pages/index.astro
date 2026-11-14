@@ -1,0 +1,437 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import NewsCard from '../components/NewsCard.astro';
+import { optimizeCloudinaryUrl, formatEditorialDate, getReadingTime } from '../utils/cloudinary';
+
+const allNoticias = await getCollection('noticias');
+const sortedNoticias = allNoticias.sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+
+// Breaking news ticker item (prioritizes recent breaking news or newest article)
+const breakingArticle = sortedNoticias.slice(0, 4).find((n) => n.data.breaking) || sortedNoticias[0];
+
+// Main Hero Article (featured among recent articles, or newest published story)
+const heroArticle = sortedNoticias.slice(0, 3).find((n) => n.data.featured) || sortedNoticias[0];
+
+// Sub-hero pair (2 stories directly below the main hero story to balance the left column)
+const remainingAfterHero = sortedNoticias.filter((n) => n.id !== heroArticle.id);
+const heroSubArticles = remainingAfterHero.slice(0, 2);
+
+// Secondary articles for the right sidebar ("Lo más reciente")
+const secondaryTopArticles = remainingAfterHero.slice(2, 6);
+
+// Opinion articles
+const opinionArticles = sortedNoticias.filter((n) => n.data.category === 'Opinión');
+
+// Remaining feed articles
+const topUsedIds = new Set([
+  heroArticle.id,
+  ...heroSubArticles.map((a) => a.id),
+]);
+const feedArticles = sortedNoticias.filter(
+  (n) => !topUsedIds.has(n.id) && n.data.category !== 'Opinión'
+);
+
+const heroImageOptimized = optimizeCloudinaryUrl(heroArticle.data.image, {
+  width: 1200,
+  height: 675,
+  crop: 'fill',
+});
+
+const heroCategorySlug = heroArticle.data.category
+  .toLowerCase()
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/\s+/g, '-');
+---
+
+<BaseLayout currentCategory="Portada">
+  <!-- Breaking News Bar ("Al Momento") -->
+  {breakingArticle && (
+    <div class="breaking-bar">
+      <div class="container-editorial breaking-inner">
+        <span class="breaking-badge">
+          <span class="live-pulse-dot" aria-hidden="true"></span>
+          AL MOMENTO
+        </span>
+        <a href={`/noticias/${breakingArticle.id}`} class="breaking-link">
+          {breakingArticle.data.title}
+        </a>
+      </div>
+    </div>
+  )}
+
+  <div class="container-editorial main-portal-wrap">
+    <!-- Above the Fold: Hero + Right Sidebar Column -->
+    <section class="hero-editorial-grid" aria-label="Noticias Principales">
+      <!-- Primary Featured Story (LCP Candidate) -->
+      <article class="hero-main-story">
+        <a href={`/noticias/${heroArticle.id}`} class="hero-media-link">
+          <div class="hero-image-frame">
+            <img
+              src={heroImageOptimized}
+              alt={heroArticle.data.title}
+              width="1200"
+              height="675"
+              fetchpriority="high"
+              class="hero-img"
+            />
+          </div>
+          {heroArticle.data.imageCaption && (
+            <span class="hero-caption">{heroArticle.data.imageCaption}</span>
+          )}
+        </a>
+
+        <div class="hero-content">
+          <a href={`/categoria/${heroCategorySlug}`} class="badge-category">
+            {heroArticle.data.category}
+          </a>
+
+          <h1 class="headline-hero">
+            <a href={`/noticias/${heroArticle.id}`} class="hero-title-link">
+              {heroArticle.data.title}
+            </a>
+          </h1>
+
+          <p class="hero-excerpt">{heroArticle.data.excerpt}</p>
+
+          <div class="hero-meta">
+            <span class="meta-author">Por {heroArticle.data.author}</span>
+            <span>·</span>
+            <time datetime={heroArticle.data.pubDate.toISOString()}>
+              {formatEditorialDate(heroArticle.data.pubDate)}
+            </time>
+            <span>·</span>
+            <span>Lectura de {getReadingTime(heroArticle.body)} min</span>
+          </div>
+        </div>
+
+        {heroSubArticles.length > 0 && (
+          <div class="hero-sub-grid">
+            {heroSubArticles.map((subArticle) => (
+              <NewsCard article={subArticle} variant="default" />
+            ))}
+          </div>
+        )}
+      </article>
+
+      <!-- Secondary Column ("Lo más reciente") -->
+      <aside class="hero-side-column" aria-label="Lo más reciente">
+        <div class="side-column-header">
+          <span class="badge-category-solid">Lo más reciente</span>
+        </div>
+        <div class="side-stories-stack">
+          {secondaryTopArticles.map((article, idx) => (
+            <NewsCard article={article} variant={idx === 0 ? 'default' : 'compact'} />
+          ))}
+        </div>
+      </aside>
+    </section>
+
+    <!-- Below the Fold: Actualidad por Secciones (Deferred Rendering for CWV) -->
+    <section class="editorial-section deferred-editorial-section" aria-label="Actualidad y Análisis">
+      <div class="section-header-editorial">
+        <h2 class="section-title-editorial">Actualidad en Quintana Roo</h2>
+        <a href="/categoria/estatales" class="section-link-more">Ver todas →</a>
+      </div>
+
+      <div class="three-col-grid">
+        {feedArticles.map((article) => (
+          <NewsCard article={article} variant="default" />
+        ))}
+      </div>
+    </section>
+
+    <!-- Voces del Caribe (Opinión & Columnas) -->
+    {opinionArticles.length > 0 && (
+      <section class="opinion-band deferred-editorial-section" aria-label="Voces y Opinión">
+        <div class="section-header-editorial">
+          <h2 class="section-title-editorial">Voces del Caribe · Opinión</h2>
+          <a href="/categoria/opinion" class="section-link-more">Todas las columnas →</a>
+        </div>
+
+        <div class="opinion-grid">
+          {opinionArticles.map((op) => (
+            <article class="opinion-card">
+              <div class="opinion-author-bar">
+                <div class="opinion-avatar" aria-hidden="true">
+                  {op.data.author.charAt(0)}
+                </div>
+                <div>
+                  <span class="opinion-author-name">{op.data.author}</span>
+                  {op.data.authorRole && (
+                    <span class="opinion-author-role">{op.data.authorRole}</span>
+                  )}
+                </div>
+              </div>
+              <h3 class="opinion-headline">
+                <a href={`/noticias/${op.id}`}>“{op.data.title}”</a>
+              </h3>
+              <p class="editorial-excerpt">{op.data.excerpt}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  /* Breaking News Ticker Bar */
+  .breaking-bar {
+    background-color: var(--color-qroo-mist);
+    border-bottom: 1px solid var(--color-qroo-border);
+    padding: 0.55rem 0;
+  }
+
+  .breaking-inner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    overflow: hidden;
+  }
+
+  .breaking-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background-color: var(--color-qroo-navy);
+    color: #ffffff;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    padding: 0.22rem 0.6rem;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  .breaking-link {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: var(--color-qroo-navy);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .breaking-link:hover {
+    color: var(--color-qroo-cyan-dark);
+  }
+
+  .main-portal-wrap {
+    padding-top: 1.5rem;
+  }
+
+  /* Hero Editorial Grid */
+  .hero-editorial-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding-bottom: 2.5rem;
+    border-bottom: 2px solid var(--color-qroo-navy);
+    margin-bottom: 2.5rem;
+  }
+
+  @media (min-width: 1024px) {
+    .hero-editorial-grid {
+      grid-template-columns: 1.75fr 1fr;
+      gap: 2.5rem;
+    }
+  }
+
+  .hero-main-story {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .hero-media-link {
+    display: block;
+    margin-bottom: 1rem;
+  }
+
+  .hero-image-frame {
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-qroo-mist);
+  }
+
+  .hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+  }
+
+  .hero-main-story:hover .hero-img {
+    transform: scale(1.02);
+  }
+
+  .hero-caption {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--color-qroo-slate);
+    margin-top: 0.4rem;
+  }
+
+  .hero-title-link:hover {
+    color: var(--color-qroo-cyan-dark);
+  }
+
+  .hero-excerpt {
+    font-size: 1.08rem;
+    line-height: 1.6;
+    color: var(--color-qroo-slate);
+    margin: 0 0 1rem 0;
+  }
+
+  .hero-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    font-size: 0.8rem;
+    color: var(--color-qroo-slate);
+    border-top: 1px solid var(--color-qroo-border);
+    padding-top: 0.75rem;
+  }
+
+  .meta-author {
+    font-weight: 700;
+    color: var(--color-qroo-navy);
+  }
+
+  .hero-sub-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-top: 1.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-qroo-border);
+  }
+
+  @media (min-width: 640px) {
+    .hero-sub-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* Side Column */
+  .hero-side-column {
+    border-top: 1px solid var(--color-qroo-border);
+    padding-top: 1.5rem;
+  }
+
+  @media (min-width: 1024px) {
+    .hero-side-column {
+      border-top: none;
+      padding-top: 0;
+      border-left: 1px solid var(--color-qroo-border);
+      padding-left: 2rem;
+    }
+  }
+
+  .side-column-header {
+    margin-bottom: 1.25rem;
+  }
+
+  .side-stories-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  /* Three Column Feed Grid */
+  .editorial-section {
+    margin-bottom: 3rem;
+  }
+
+  .three-col-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+
+  @media (min-width: 640px) {
+    .three-col-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .three-col-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  /* Opinion Section */
+  .opinion-band {
+    background-color: var(--color-qroo-mist);
+    padding: 1.75rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-qroo-border);
+  }
+
+  .opinion-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .opinion-card {
+    background-color: var(--color-qroo-paper);
+    padding: 1.5rem;
+    border-radius: var(--radius-sm);
+    border-left: 4px solid var(--color-qroo-cyan);
+    box-shadow: 0 2px 8px rgba(11, 42, 94, 0.04);
+  }
+
+  .opinion-author-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .opinion-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--color-qroo-navy);
+    color: var(--color-qroo-cyan);
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+  }
+
+  .opinion-author-name {
+    display: block;
+    font-weight: 800;
+    font-size: 0.9rem;
+    color: var(--color-qroo-navy);
+  }
+
+  .opinion-author-role {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--color-qroo-slate);
+  }
+
+  .opinion-headline {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1.35rem;
+    line-height: 1.3;
+    color: var(--color-qroo-navy);
+    margin: 0 0 0.6rem 0;
+  }
+
+  .opinion-headline a:hover {
+    color: var(--color-qroo-cyan-dark);
+  }
+</style>

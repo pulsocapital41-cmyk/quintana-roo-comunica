@@ -1,0 +1,540 @@
+---
+interface Props {
+  currentCategory?: string;
+}
+
+const { currentCategory = 'Portada' } = Astro.props;
+
+const categories = [
+  { name: 'Portada', href: '/' },
+  { name: 'Estatales', href: '/categoria/estatales' },
+  { name: 'Turismo', href: '/categoria/turismo' },
+  { name: 'Cultura', href: '/categoria/cultura' },
+  { name: 'Medio ambiente', href: '/categoria/medio-ambiente' },
+  { name: 'Historia', href: '/categoria/historia' },
+];
+
+const todayFormatted = new Intl.DateTimeFormat('es-MX', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+}).format(new Date());
+
+// Capitalize first letter
+const displayDate = todayFormatted.charAt(0).toUpperCase() + todayFormatted.slice(1);
+---
+
+<header class="site-header">
+  <!-- Top Utility Bar -->
+  <div class="top-utility-bar">
+    <div class="container-editorial top-utility-inner">
+      <div class="date-edition">
+        <span class="live-pulse-dot" aria-hidden="true"></span>
+        <time datetime={new Date().toISOString()}>{displayDate}</time>
+        <span class="edition-divider">|</span>
+        <span class="edition-tag">Edición Digital</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Brand Masthead -->
+  <div class="masthead container-editorial">
+    <div class="masthead-side masthead-left">
+      <div class="weather-ticker">
+        <span class="ticker-label">DESDE EL CARIBE</span>
+        <span class="ticker-val">Noticias de Quintana Roo</span>
+      </div>
+    </div>
+
+    <div class="masthead-center">
+      <a href="/" class="brand-logo-link" aria-label="Quintana Roo Comunica - Ir a Portada">
+        <img
+          src="/logo-quintana-roo-comunica.png"
+          alt="Quintana Roo Comunica"
+          class="brand-logo-img"
+          width="598"
+          height="610"
+          fetchpriority="high"
+        />
+        <span class="brand-wordmark">
+          <span class="brand-wordmark-top">Quintana Roo</span>
+          <span class="brand-wordmark-bottom">Comunica</span>
+        </span>
+      </a>
+    </div>
+
+    <div class="masthead-side masthead-right">
+      <button
+        type="button"
+        id="open-search-btn"
+        class="search-trigger-btn"
+        aria-label="Buscar noticias"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <span class="search-btn-text">Buscar</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile-First Swipeable Section Navigation Bar -->
+  <nav class="nav-sections-bar" aria-label="Secciones principales">
+    <div class="container-editorial nav-sections-inner">
+      <ul class="nav-list">
+        {categories.map((cat) => {
+          const isActive =
+            currentCategory.toLowerCase() === cat.name.toLowerCase();
+          return (
+            <li class="nav-item">
+              <a
+                href={cat.href}
+                class:list={['nav-link', { 'is-active': isActive }]}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                {cat.name}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<!-- Native HTML <dialog> Search Modal -->
+<dialog id="search-dialog" class="search-modal" aria-labelledby="search-modal-title">
+  <div class="search-modal-box">
+    <div class="search-modal-header">
+      <h2 id="search-modal-title" class="search-modal-heading">Buscar en Quintana Roo Comunica</h2>
+      <button type="button" id="close-search-btn" class="search-close-btn" aria-label="Cerrar buscador">
+        ✕
+      </button>
+    </div>
+    <div class="search-input-wrap">
+      <input
+        type="search"
+        id="editorial-search-input"
+        placeholder="Escribe un tema, destino, municipio o palabra clave..."
+        autocomplete="off"
+      />
+    </div>
+    <div id="search-results-list" class="search-results-container">
+      <p class="search-hint">Escribe al menos 2 letras para filtrar noticias al instante.</p>
+    </div>
+  </div>
+</dialog>
+
+<style>
+  .site-header {
+    background-color: var(--color-qroo-paper);
+    border-bottom: 1px solid var(--color-qroo-border);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  /* Top Utility Bar */
+  .top-utility-bar {
+    background-color: var(--color-qroo-navy);
+    color: #e2e8f0;
+    font-size: 0.75rem;
+    padding: 0.4rem 0;
+    border-bottom: 2px solid var(--color-qroo-cyan);
+  }
+
+  .top-utility-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .date-edition {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+  }
+
+  .edition-divider,
+  .edition-tag {
+    display: none;
+  }
+
+  @media (min-width: 640px) {
+    .edition-divider,
+    .edition-tag {
+      display: inline;
+      color: #94a3b8;
+    }
+  }
+
+  .admin-access-link {
+    color: var(--color-qroo-cyan);
+    font-weight: 700;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .admin-access-link:hover {
+    color: #ffffff;
+  }
+
+  /* Masthead */
+  .masthead {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+  }
+
+  @media (min-width: 768px) {
+    .masthead {
+      padding-top: 1.25rem;
+      padding-bottom: 1.25rem;
+    }
+  }
+
+  .masthead-left {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .masthead-left {
+      display: flex;
+      flex-direction: column;
+    }
+  }
+
+  .masthead-center {
+    grid-column: 1 / 3;
+    justify-self: start;
+  }
+
+  @media (min-width: 768px) {
+    .masthead-center {
+      grid-column: 2 / 3;
+      justify-self: center;
+    }
+  }
+
+  .masthead-right {
+    grid-column: 3 / 4;
+    justify-self: end;
+  }
+
+  .weather-ticker {
+    display: flex;
+    flex-direction: column;
+    border-left: 3px solid var(--color-qroo-cyan);
+    padding-left: 0.65rem;
+  }
+
+  .ticker-label {
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--color-qroo-cyan);
+  }
+
+  .ticker-val {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-qroo-slate);
+  }
+
+  .brand-logo-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    text-decoration: none;
+  }
+
+  .brand-logo-img {
+    height: 46px;
+    width: auto;
+    object-fit: contain;
+  }
+
+  .brand-wordmark {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+    font-family: var(--font-sans);
+    text-align: left;
+  }
+
+  .brand-wordmark-top {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--color-qroo-navy);
+  }
+
+  .brand-wordmark-bottom {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--color-qroo-cyan);
+    margin-top: 0.2rem;
+  }
+
+  @media (min-width: 768px) {
+    .brand-logo-img {
+      height: 68px;
+    }
+    .brand-wordmark-top {
+      font-size: 1.9rem;
+    }
+    .brand-wordmark-bottom {
+      font-size: 1.1rem;
+    }
+  }
+
+  .search-trigger-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background-color: var(--color-qroo-mist);
+    border: 1px solid var(--color-qroo-border);
+    color: var(--color-qroo-navy);
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .search-trigger-btn:hover {
+    border-color: var(--color-qroo-cyan);
+    color: var(--color-qroo-cyan-dark);
+  }
+
+  .search-btn-text {
+    display: none;
+  }
+
+  @media (min-width: 640px) {
+    .search-btn-text {
+      display: inline;
+    }
+  }
+
+  /* Swipeable Category Navigation (Mobile-First) */
+  .nav-sections-bar {
+    border-top: 1px solid var(--color-qroo-border);
+    background-color: var(--color-qroo-paper);
+  }
+
+  .nav-sections-inner {
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;
+  }
+
+  .nav-sections-inner::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-list {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.25rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    white-space: nowrap;
+  }
+
+  @media (min-width: 768px) {
+    .nav-list {
+      justify-content: center;
+      gap: 1.25rem;
+    }
+  }
+
+  .nav-link {
+    display: inline-block;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.84rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-qroo-slate);
+    border-bottom: 3px solid transparent;
+    transition: all 0.15s ease;
+  }
+
+  .nav-link:hover {
+    color: var(--color-qroo-navy);
+  }
+
+  .nav-link.is-active {
+    color: var(--color-qroo-navy);
+    border-bottom-color: var(--color-qroo-cyan);
+  }
+
+  /* Native Search Dialog */
+  .search-modal {
+    width: min(92vw, 600px);
+    border: none;
+    border-radius: 8px;
+    padding: 0;
+    background: var(--color-qroo-paper);
+    box-shadow: 0 20px 45px rgba(11, 42, 94, 0.25);
+  }
+
+  .search-modal::backdrop {
+    background: rgba(11, 42, 94, 0.6);
+    backdrop-filter: blur(3px);
+  }
+
+  .search-modal-box {
+    padding: 1.5rem;
+  }
+
+  .search-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .search-modal-heading {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--color-qroo-navy);
+  }
+
+  .search-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: var(--color-qroo-slate);
+    padding: 0.25rem 0.5rem;
+  }
+
+  .search-input-wrap input {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    border: 2px solid var(--color-qroo-border-strong);
+    border-radius: 6px;
+    outline: none;
+  }
+
+  .search-input-wrap input:focus {
+    border-color: var(--color-qroo-cyan);
+  }
+
+  .search-results-container {
+    margin-top: 1rem;
+    max-height: 340px;
+    overflow-y: auto;
+  }
+
+  .search-hint {
+    font-size: 0.875rem;
+    color: var(--color-qroo-slate);
+    margin: 0.5rem 0;
+  }
+
+  :global(.search-result-item) {
+    display: block;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--color-qroo-border);
+  }
+
+  :global(.search-result-item:hover .search-result-title) {
+    color: var(--color-qroo-cyan-dark);
+  }
+
+  :global(.search-result-cat) {
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--color-qroo-cyan);
+    display: block;
+  }
+
+  :global(.search-result-title) {
+    font-family: var(--font-serif);
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--color-qroo-navy);
+    margin: 0.15rem 0 0 0;
+  }
+</style>
+
+<script>
+  const dialog = document.getElementById('search-dialog') as HTMLDialogElement | null;
+  const openBtn = document.getElementById('open-search-btn');
+  const closeBtn = document.getElementById('close-search-btn');
+  const input = document.getElementById('editorial-search-input') as HTMLInputElement | null;
+  const resultsContainer = document.getElementById('search-results-list');
+
+  let cachedArticles: Array<{ title: string; slug: string; category: string; excerpt: string }> | null = null;
+
+  openBtn?.addEventListener('click', async () => {
+    dialog?.showModal();
+    input?.focus();
+    if (!cachedArticles) {
+      try {
+        const res = await fetch('/api/search.json');
+        if (res.ok) cachedArticles = await res.json();
+      } catch {
+        cachedArticles = [];
+      }
+    }
+  });
+
+  closeBtn?.addEventListener('click', () => dialog?.close());
+
+  dialog?.addEventListener('click', (e) => {
+    if (e.target === dialog) dialog.close();
+  });
+
+  input?.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    if (!resultsContainer) return;
+
+    if (q.length < 2) {
+      resultsContainer.innerHTML = '<p class="search-hint">Escribe al menos 2 letras para filtrar noticias al instante.</p>';
+      return;
+    }
+
+    const matches = (cachedArticles || []).filter(
+      (a) =>
+        a.title.toLowerCase().includes(q) ||
+        a.excerpt.toLowerCase().includes(q) ||
+        a.category.toLowerCase().includes(q)
+    );
+
+    if (matches.length === 0) {
+      resultsContainer.innerHTML = '<p class="search-hint">No se encontraron noticias con ese término.</p>';
+      return;
+    }
+
+    resultsContainer.innerHTML = matches
+      .map(
+        (m) => `
+        <a href="/noticias/${m.slug}" class="search-result-item">
+          <span class="search-result-cat">${m.category}</span>
+          <p class="search-result-title">${m.title}</p>
+        </a>
+      `
+      )
+      .join('');
+  });
+</script>

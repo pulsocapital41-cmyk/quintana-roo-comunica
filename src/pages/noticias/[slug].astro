@@ -1,0 +1,422 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import NewsCard from '../../components/NewsCard.astro';
+import { optimizeCloudinaryUrl, formatEditorialDate, getReadingTime } from '../../utils/cloudinary';
+
+export async function getStaticPaths() {
+  const noticias = await getCollection('noticias');
+  return noticias.map((article) => ({
+    params: { slug: article.id },
+    props: { article },
+  }));
+}
+
+const { article } = Astro.props;
+const { Content } = await render(article);
+const {
+  title,
+  excerpt,
+  category,
+  image,
+  imageCaption,
+  author,
+  authorRole,
+  pubDate,
+  tags = [],
+} = article.data;
+
+const categorySlug = category
+  .toLowerCase()
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/\s+/g, '-');
+
+const heroImageOptimized = optimizeCloudinaryUrl(image, {
+  width: 1280,
+  height: 720,
+  crop: 'fill',
+});
+
+// Related articles
+const allNoticias = await getCollection('noticias');
+const relatedArticles = allNoticias
+  .filter((n) => n.id !== article.id)
+  .sort((a, b) => {
+    const sameCatA = a.data.category === category ? 1 : 0;
+    const sameCatB = b.data.category === category ? 1 : 0;
+    if (sameCatA !== sameCatB) return sameCatB - sameCatA;
+    return b.data.pubDate.valueOf() - a.data.pubDate.valueOf();
+  })
+  .slice(0, 3);
+
+const readingMinutes = getReadingTime(article.body);
+---
+
+<BaseLayout
+  title={title}
+  description={excerpt}
+  image={heroImageOptimized}
+  type="article"
+  publishedTime={pubDate.toISOString()}
+  author={author}
+  currentCategory={category}
+>
+  <article class="article-page container-editorial">
+    <!-- Article Header -->
+    <header class="article-header">
+      <div class="article-breadcrumb">
+        <a href="/" class="crumb-home">Portada</a>
+        <span class="crumb-sep">/</span>
+        <a href={`/categoria/${categorySlug}`} class="badge-category">
+          {category}
+        </a>
+      </div>
+
+      <h1 class="article-headline">{title}</h1>
+      <p class="article-subheadline">{excerpt}</p>
+
+      <!-- Author & Share Toolbar -->
+      <div class="article-meta-bar">
+        <div class="author-block">
+          <div class="author-avatar" aria-hidden="true">{author.charAt(0)}</div>
+          <div class="author-details">
+            <span class="author-name">Por {author}</span>
+            <div class="publish-meta">
+              {authorRole && <span>{authorRole} · </span>}
+              <time datetime={pubDate.toISOString()}>{formatEditorialDate(pubDate)}</time>
+              <span> · Lectura de {readingMinutes} min</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="share-toolbar" aria-label="Compartir noticia">
+          <span class="share-label">Compartir:</span>
+          <a
+            id="share-wa"
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="share-btn share-wa"
+            title="Compartir en WhatsApp"
+          >
+            WhatsApp
+          </a>
+          <a
+            id="share-x"
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="share-btn"
+            title="Compartir en X"
+          >
+            X
+          </a>
+          <button type="button" id="copy-link-btn" class="share-btn">
+            Copiar enlace
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Featured Figure (LCP Image) -->
+    <figure class="article-figure">
+      <div class="figure-img-wrap">
+        <img
+          src={heroImageOptimized}
+          alt={title}
+          width="1280"
+          height="720"
+          fetchpriority="high"
+          class="article-main-img"
+        />
+      </div>
+      {imageCaption && (
+        <figcaption class="figure-caption">{imageCaption}</figcaption>
+      )}
+    </figure>
+
+    <!-- Long-Form Editorial Body -->
+    <div class="article-prose">
+      <Content />
+    </div>
+
+    <!-- Tags Footer -->
+    {tags.length > 0 && (
+      <footer class="article-tags-bar">
+        <span class="tags-title">Temas relacionados:</span>
+        <div class="tags-list">
+          {tags.map((tag) => (
+            <span class="tag-pill">#{tag}</span>
+          ))}
+        </div>
+      </footer>
+    )}
+  </article>
+
+  <!-- Related News Section (Deferred Rendering) -->
+  <section class="container-editorial related-section deferred-editorial-section" aria-label="Más noticias">
+    <div class="section-header-editorial">
+      <h2 class="section-title-editorial">Continúa leyendo en Quintana Roo Comunica</h2>
+      <a href={`/categoria/${categorySlug}`} class="section-link-more">
+        Más en {category} →
+      </a>
+    </div>
+
+    <div class="related-grid">
+      {relatedArticles.map((rel) => (
+        <NewsCard article={rel} variant="default" />
+      ))}
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .article-page {
+    padding-top: 1.75rem;
+    padding-bottom: 2rem;
+  }
+
+  .article-header {
+    max-width: 840px;
+    margin-inline: auto;
+    margin-bottom: 1.75rem;
+  }
+
+  .article-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .crumb-home {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-qroo-slate);
+  }
+
+  .crumb-sep {
+    color: var(--color-qroo-border-strong);
+    font-size: 0.75rem;
+  }
+
+  .article-breadcrumb .badge-category {
+    margin-bottom: 0;
+  }
+
+  .article-headline {
+    font-family: var(--font-serif);
+    font-size: clamp(1.85rem, 4vw, 2.95rem);
+    line-height: 1.12;
+    font-weight: 700;
+    color: var(--color-qroo-navy);
+    letter-spacing: -0.02em;
+    margin: 0 0 1rem 0;
+  }
+
+  .article-subheadline {
+    font-size: clamp(1.05rem, 1.8vw, 1.25rem);
+    line-height: 1.55;
+    color: var(--color-qroo-slate);
+    margin: 0 0 1.5rem 0;
+  }
+
+  .article-meta-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    justify-content: space-between;
+    padding: 1rem 0;
+    border-top: 1px solid var(--color-qroo-border);
+    border-bottom: 1px solid var(--color-qroo-border);
+  }
+
+  @media (min-width: 768px) {
+    .article-meta-bar {
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+
+  .author-block {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .author-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background-color: var(--color-qroo-navy);
+    color: var(--color-qroo-cyan);
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .author-name {
+    display: block;
+    font-weight: 800;
+    font-size: 0.9rem;
+    color: var(--color-qroo-navy);
+  }
+
+  .publish-meta {
+    font-size: 0.78rem;
+    color: var(--color-qroo-slate);
+  }
+
+  .share-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .share-label {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--color-qroo-slate);
+    margin-right: 0.25rem;
+  }
+
+  .share-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.38rem 0.75rem;
+    font-family: var(--font-sans);
+    font-size: 0.76rem;
+    font-weight: 700;
+    border-radius: 999px;
+    border: 1px solid var(--color-qroo-border-strong);
+    background-color: var(--color-qroo-paper);
+    color: var(--color-qroo-navy);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .share-btn:hover {
+    border-color: var(--color-qroo-cyan);
+    color: var(--color-qroo-cyan-dark);
+  }
+
+  .share-wa {
+    background-color: #ecfdf5;
+    border-color: #a7f3d0;
+    color: #065f46;
+  }
+
+  /* Article Figure */
+  .article-figure {
+    max-width: 960px;
+    margin: 0 auto 2.25rem auto;
+  }
+
+  .figure-img-wrap {
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-qroo-mist);
+  }
+
+  .article-main-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .figure-caption {
+    font-size: 0.8rem;
+    color: var(--color-qroo-slate);
+    padding-top: 0.5rem;
+    border-bottom: 1px solid var(--color-qroo-border);
+    padding-bottom: 0.65rem;
+  }
+
+  /* Tags Footer */
+  .article-tags-bar {
+    max-width: var(--article-max);
+    margin: 2.5rem auto 0 auto;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--color-qroo-border);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .tags-title {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--color-qroo-navy);
+  }
+
+  .tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .tag-pill {
+    font-size: 0.76rem;
+    font-weight: 600;
+    background-color: var(--color-qroo-mist);
+    color: var(--color-qroo-slate);
+    padding: 0.25rem 0.65rem;
+    border-radius: 4px;
+  }
+
+  /* Related Section */
+  .related-section {
+    margin-top: 2.5rem;
+  }
+
+  .related-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+
+  @media (min-width: 768px) {
+    .related-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>
+
+<script>
+  const waBtn = document.getElementById('share-wa') as HTMLAnchorElement | null;
+  const xBtn = document.getElementById('share-x') as HTMLAnchorElement | null;
+  const copyBtn = document.getElementById('copy-link-btn');
+
+  const url = encodeURIComponent(window.location.href);
+  const title = encodeURIComponent(document.title);
+
+  if (waBtn) {
+    waBtn.href = `https://wa.me/?text=${title}%20${url}`;
+  }
+  if (xBtn) {
+    xBtn.href = `https://twitter.com/intent/tweet?text=${title}&url=${url}`;
+  }
+
+  copyBtn?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      const original = copyBtn.textContent;
+      copyBtn.textContent = '¡Enlace copiado!';
+      setTimeout(() => {
+        copyBtn.textContent = original;
+      }, 2000);
+    } catch {
+      // Fallback
+    }
+  });
+</script>
